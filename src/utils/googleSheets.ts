@@ -14,7 +14,9 @@ interface FormData {
 }
 
 export class GoogleSheetsService {
-  private readonly API_URL = 'https://voltajedigital.com/api/submit-form';
+  private readonly API_URL = process.env.NODE_ENV === 'production' 
+    ? 'https://api.chivisclothes.com/api/submit-form'  // URL de producción
+    : 'http://localhost:3000/api/submit-form';         // URL de desarrollo
 
   async appendData(data: FormData) {
     try {
@@ -22,7 +24,9 @@ export class GoogleSheetsService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Origin': 'https://app.chivisclothes.com'
         },
+        credentials: 'include',
         body: JSON.stringify(data),
       });
 
