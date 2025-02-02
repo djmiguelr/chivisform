@@ -193,7 +193,7 @@ function App() {
               ¡Aprovecha tu descuento en productos de colección exclusiva!
             </p>
             <p className="text-gray-600">
-              ¡Te esperamos en CHIVIS Clothes S.A.S.!
+              ¡Te esperamos en CHIVIS CLOTHES S.A.S.!
             </p>
           </div>
         </>

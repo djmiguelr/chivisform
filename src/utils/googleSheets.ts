@@ -9,9 +9,18 @@ export class GoogleSheetsService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify(data),
       });
+
+      // Si la respuesta no es JSON, captura el texto
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Respuesta no JSON:', text);
+        throw new Error('Respuesta del servidor no válida');
+      }
 
       if (!response.ok) {
         const errorData = await response.json();

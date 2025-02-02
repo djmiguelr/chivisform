@@ -15,6 +15,9 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ): Promise<void> {
+  // Establecer headers de respuesta
+  res.setHeader('Content-Type', 'application/json');
+  
   // Habilitar CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -35,13 +38,25 @@ export default async function handler(
   }
 
   try {
+    // Verificar que tenemos las credenciales necesarias
+    if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY || !process.env.SPREADSHEET_ID) {
+      throw new Error('Faltan credenciales de Google Sheets');
+    }
+
     console.log('Credenciales:', {
       client_email: process.env.GOOGLE_CLIENT_EMAIL,
       spreadsheetId: process.env.SPREADSHEET_ID,
-      // No imprimas la private_key por seguridad
     });
 
     console.log('Recibiendo datos:', req.body);
+
+    // Verificar que tenemos todos los datos necesarios
+    const requiredFields = ['compraPreferencia', 'ciudad', 'edad', 'ocupacion', 'estilo'];
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        throw new Error(`Falta el campo requerido: ${field}`);
+      }
+    }
 
     const result = await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.SPREADSHEET_ID,
