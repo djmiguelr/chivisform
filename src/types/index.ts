@@ -2,11 +2,11 @@ export interface FormData {
   timestamp: string;
   compraPreferencia: string;
   ciudad: string;
-  ciudadOtra: string;
+  ciudadOtra?: string;
   edad: string;
   ocupacion: string;
   estilo: string;
-  estiloOtro: string;
+  estiloOtro?: string;
   experiencia: string;
   recomendacion: string;
   sugerencia: string;

@@ -3,7 +3,7 @@ import type { FormData } from '../types';
 export class GoogleSheetsService {
   private readonly API_URL = '/api/submit-form';
 
-  async appendData(data: FormData): Promise<any> {
+  async appendData(data: FormData): Promise<{ success: boolean; data?: any }> {
     try {
       const response = await fetch(this.API_URL, {
         method: 'POST',

@@ -213,13 +213,15 @@ function App() {
     try {
       const googleSheetsService = new GoogleSheetsService();
       
-      const dataToSubmit = {
+      const dataToSubmit: FormData = {
         timestamp: new Date().toISOString(),
         compraPreferencia: formData.compraPreferencia,
-        ciudad: formData.ciudad === 'otra' ? formData.ciudadOtra : formData.ciudad,
+        ciudad: formData.ciudad === 'otra' ? formData.ciudadOtra || '' : formData.ciudad,
+        ciudadOtra: formData.ciudadOtra,
         edad: formData.edad,
         ocupacion: formData.ocupacion,
-        estilo: formData.estilo === 'otro' ? formData.estiloOtro : formData.estilo,
+        estilo: formData.estilo === 'otro' ? formData.estiloOtro || '' : formData.estilo,
+        estiloOtro: formData.estiloOtro,
         experiencia: formData.experiencia,
         recomendacion: formData.recomendacion,
         sugerencia: formData.sugerencia,
