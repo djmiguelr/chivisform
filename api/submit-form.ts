@@ -14,7 +14,7 @@ const sheets = google.sheets({ version: 'v4', auth });
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
-) {
+): Promise<void> {
   // Habilitar CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -30,7 +30,8 @@ export default async function handler(
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   try {
@@ -57,14 +58,13 @@ export default async function handler(
     });
 
     console.log('Datos guardados exitosamente');
-    return res.status(200).json({ 
+    res.status(200).json({ 
       success: true, 
       data: result.data 
     });
-
   } catch (error: any) {
     console.error('Error detallado:', error);
-    return res.status(500).json({ 
+    res.status(500).json({ 
       error: 'Error al guardar los datos', 
       details: error.message 
     });
