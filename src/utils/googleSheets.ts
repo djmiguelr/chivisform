@@ -8,7 +8,7 @@ export class GoogleSheetsService {
   async appendData(data: FormData): Promise<{ success: boolean; data?: any }> {
     try {
       console.log('Enviando datos a:', this.API_URL);
-      console.log('Datos:', data);
+      console.log('Datos:', JSON.stringify(data, null, 2));
 
       const response = await fetch(this.API_URL, {
         method: 'POST',
@@ -16,27 +16,36 @@ export class GoogleSheetsService {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          timestamp: new Date().toISOString()
+        }),
       });
 
-      // Si la respuesta no es JSON, captura el texto
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Respuesta no JSON:', text);
-        throw new Error('Respuesta del servidor no válida');
+      const responseText = await response.text();
+      console.log('Respuesta del servidor:', responseText);
+
+      let jsonResponse;
+      try {
+        jsonResponse = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Error al parsear respuesta:', e);
+        throw new Error(`Respuesta no válida: ${responseText}`);
       }
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al enviar los datos');
+        throw new Error(jsonResponse.error || 'Error al enviar los datos');
       }
 
-      const result = await response.json();
-      console.log('Respuesta exitosa:', result);
-      return result;
-    } catch (error) {
-      console.error('Error al escribir en Google Sheets:', error);
+      console.log('Respuesta exitosa:', jsonResponse);
+      return jsonResponse;
+    } catch (error: any) {
+      console.error('Error detallado:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        cause: error.cause
+      });
       throw error;
     }
   }

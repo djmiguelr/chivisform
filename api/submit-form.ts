@@ -15,6 +15,8 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ): Promise<void> {
+  console.log('Iniciando manejo de solicitud...');
+
   // Establecer headers de respuesta
   res.setHeader('Content-Type', 'application/json');
   
@@ -28,49 +30,62 @@ export default async function handler(
   );
 
   if (req.method === 'OPTIONS') {
+    console.log('Respondiendo a OPTIONS request');
     res.status(200).json({ status: 'ok' });
     return;
   }
 
   if (req.method !== 'POST') {
+    console.log('Método no permitido:', req.method);
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
 
   try {
     console.log('Verificando credenciales...');
-    if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY || !process.env.SPREADSHEET_ID) {
-      throw new Error('Faltan credenciales de Google Sheets');
+    if (!process.env.GOOGLE_CLIENT_EMAIL) {
+      throw new Error('Falta GOOGLE_CLIENT_EMAIL');
+    }
+    if (!process.env.GOOGLE_PRIVATE_KEY) {
+      throw new Error('Falta GOOGLE_PRIVATE_KEY');
+    }
+    if (!process.env.SPREADSHEET_ID) {
+      throw new Error('Falta SPREADSHEET_ID');
     }
 
-    console.log('Credenciales:', {
+    console.log('Credenciales encontradas:', {
       client_email: process.env.GOOGLE_CLIENT_EMAIL,
       spreadsheetId: process.env.SPREADSHEET_ID,
+      has_private_key: !!process.env.GOOGLE_PRIVATE_KEY
     });
 
-    console.log('Recibiendo datos:', req.body);
+    console.log('Datos recibidos:', JSON.stringify(req.body, null, 2));
+
+    const values = [
+      new Date().toISOString(),
+      req.body.compraPreferencia || '',
+      req.body.ciudad || '',
+      req.body.edad || '',
+      req.body.ocupacion || '',
+      req.body.estilo || '',
+      req.body.experiencia || '',
+      req.body.recomendacion || '',
+      req.body.sugerencia || '',
+      req.body.aceptaTerminos ? 'Sí' : 'No'
+    ];
+
+    console.log('Valores a insertar:', values);
 
     const result = await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.SPREADSHEET_ID,
       range: 'Respuestas!A:J',
       valueInputOption: 'USER_ENTERED',
       requestBody: {
-        values: [[
-          new Date().toISOString(),
-          req.body.compraPreferencia || '',
-          req.body.ciudad || '',
-          req.body.edad || '',
-          req.body.ocupacion || '',
-          req.body.estilo || '',
-          req.body.experiencia || '',
-          req.body.recomendacion || '',
-          req.body.sugerencia || '',
-          req.body.aceptaTerminos ? 'Sí' : 'No'
-        ]],
+        values: [values],
       },
     });
 
-    console.log('Respuesta de Google Sheets:', result.data);
+    console.log('Respuesta de Google Sheets:', JSON.stringify(result.data, null, 2));
     res.status(200).json({ 
       success: true, 
       data: result.data 
@@ -79,6 +94,7 @@ export default async function handler(
     console.error('Error detallado:', {
       message: error.message,
       stack: error.stack,
+      name: error.name,
       response: error.response?.data,
       config: error.config
     });
@@ -86,6 +102,7 @@ export default async function handler(
     res.status(500).json({ 
       error: 'Error al guardar los datos', 
       details: error.message,
+      name: error.name,
       googleError: error.response?.data
     });
   }
