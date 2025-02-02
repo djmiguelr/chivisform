@@ -14,8 +14,10 @@ export class GoogleSheetsService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Origin': 'https://app.chivisclothes.com'
         },
+        credentials: 'include',
         body: JSON.stringify({
           ...data,
           timestamp: new Date().toISOString()
@@ -34,7 +36,8 @@ export class GoogleSheetsService {
       }
 
       if (!response.ok) {
-        throw new Error(jsonResponse.error || 'Error al enviar los datos');
+        const errorMessage = jsonResponse.error?.message || jsonResponse.error || 'Error al enviar los datos';
+        throw new Error(errorMessage);
       }
 
       console.log('Respuesta exitosa:', jsonResponse);
@@ -46,7 +49,7 @@ export class GoogleSheetsService {
         name: error.name,
         cause: error.cause
       });
-      throw error;
+      throw new Error(error.message || 'Error desconocido');
     }
   }
 } 
