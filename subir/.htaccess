@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-l
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# Habilitar Node.js
+AddHandler application/x-httpd-php .php
+AddHandler cgi-script .cgi .pl .js
+AddType application/x-httpd-php .php .html
+DirectoryIndex index.html index.htm index.php 
