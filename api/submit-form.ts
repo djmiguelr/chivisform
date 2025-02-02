@@ -28,7 +28,7 @@ export default async function handler(
   );
 
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
+    res.status(200).json({ status: 'ok' });
     return;
   }
 
@@ -38,7 +38,7 @@ export default async function handler(
   }
 
   try {
-    // Verificar que tenemos las credenciales necesarias
+    console.log('Verificando credenciales...');
     if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY || !process.env.SPREADSHEET_ID) {
       throw new Error('Faltan credenciales de Google Sheets');
     }
@@ -50,14 +50,6 @@ export default async function handler(
 
     console.log('Recibiendo datos:', req.body);
 
-    // Verificar que tenemos todos los datos necesarios
-    const requiredFields = ['compraPreferencia', 'ciudad', 'edad', 'ocupacion', 'estilo'];
-    for (const field of requiredFields) {
-      if (!req.body[field]) {
-        throw new Error(`Falta el campo requerido: ${field}`);
-      }
-    }
-
     const result = await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.SPREADSHEET_ID,
       range: 'Respuestas!A:J',
@@ -65,14 +57,14 @@ export default async function handler(
       requestBody: {
         values: [[
           new Date().toISOString(),
-          req.body.compraPreferencia,
-          req.body.ciudad,
-          req.body.edad,
-          req.body.ocupacion,
-          req.body.estilo,
-          req.body.experiencia,
-          req.body.recomendacion,
-          req.body.sugerencia,
+          req.body.compraPreferencia || '',
+          req.body.ciudad || '',
+          req.body.edad || '',
+          req.body.ocupacion || '',
+          req.body.estilo || '',
+          req.body.experiencia || '',
+          req.body.recomendacion || '',
+          req.body.sugerencia || '',
           req.body.aceptaTerminos ? 'Sí' : 'No'
         ]],
       },

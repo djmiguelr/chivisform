@@ -1,10 +1,15 @@
 import type { FormData } from '../types';
 
 export class GoogleSheetsService {
-  private readonly API_URL = '/api/submit-form';
+  private readonly API_URL = process.env.NODE_ENV === 'production'
+    ? 'https://chivisform.vercel.app/api/submit-form'
+    : '/api/submit-form';
 
   async appendData(data: FormData): Promise<{ success: boolean; data?: any }> {
     try {
+      console.log('Enviando datos a:', this.API_URL);
+      console.log('Datos:', data);
+
       const response = await fetch(this.API_URL, {
         method: 'POST',
         headers: {
@@ -27,7 +32,9 @@ export class GoogleSheetsService {
         throw new Error(errorData.error || 'Error al enviar los datos');
       }
 
-      return await response.json();
+      const result = await response.json();
+      console.log('Respuesta exitosa:', result);
+      return result;
     } catch (error) {
       console.error('Error al escribir en Google Sheets:', error);
       throw error;
