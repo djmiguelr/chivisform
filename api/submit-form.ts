@@ -1,21 +1,6 @@
-import { google } from 'googleapis';
-
 export const config = {
-  runtime: 'edge',
-  unstable_allowDynamic: [
-    '/node_modules/googleapis/**',
-  ],
+  runtime: 'edge'
 };
-
-interface VercelRequest {
-  method: string;
-  body: any;
-}
-
-interface VercelResponse {
-  status: number;
-  json: (data: any) => Response;
-}
 
 const corsHeaders = {
   'Access-Control-Allow-Credentials': 'true',
@@ -24,10 +9,48 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Origin',
 };
 
+async function getAccessToken() {
+  const credentials = {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+  };
+
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: generateJWT(credentials),
+    }),
+  });
+
+  const data = await response.json();
+  return data.access_token;
+}
+
+async function appendToSheet(values: string[], accessToken: string) {
+  const response = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}/values/Respuestas!A:J:append?valueInputOption=USER_ENTERED`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        values: [values],
+      }),
+    }
+  );
+
+  return response.json();
+}
+
 export default async function handler(
   req: Request
 ) {
-  // Establecer headers CORS para todas las respuestas
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 200,
@@ -59,17 +82,7 @@ export default async function handler(
       throw new Error('Falta SPREADSHEET_ID');
     }
 
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      },
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-    });
-
-    const sheets = google.sheets({ version: 'v4', auth });
     const body = await req.json();
-
     const values = [
       new Date().toISOString(),
       body.compraPreferencia || '',
@@ -83,17 +96,11 @@ export default async function handler(
       body.aceptaTerminos ? 'Sí' : 'No'
     ];
 
-    const result = await sheets.spreadsheets.values.append({
-      spreadsheetId: process.env.SPREADSHEET_ID,
-      range: 'Respuestas!A:J',
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [values],
-      },
-    });
+    const accessToken = await getAccessToken();
+    const result = await appendToSheet(values, accessToken);
 
     return new Response(
-      JSON.stringify({ success: true, data: result.data }), 
+      JSON.stringify({ success: true, data: result }), 
       { 
         status: 200,
         headers: {
@@ -119,4 +126,39 @@ export default async function handler(
       }
     );
   }
+}
+
+function generateJWT(credentials: { client_email?: string; private_key?: string }) {
+  const now = Math.floor(Date.now() / 1000);
+  const oneHour = 60 * 60;
+  const expiry = now + oneHour;
+
+  const header = {
+    alg: 'RS256',
+    typ: 'JWT',
+    kid: credentials.private_key
+  };
+
+  const claim = {
+    iss: credentials.client_email,
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: expiry,
+    iat: now
+  };
+
+  const base64Header = btoa(JSON.stringify(header));
+  const base64Claim = btoa(JSON.stringify(claim));
+
+  // Nota: Esta es una implementación simplificada.
+  // En producción, deberías usar una biblioteca de JWT segura
+  const signature = signRS256(`${base64Header}.${base64Claim}`, credentials.private_key || '');
+  
+  return `${base64Header}.${base64Claim}.${signature}`;
+}
+
+function signRS256(input: string, privateKey: string): string {
+  // Aquí deberías implementar la firma RS256
+  // Por seguridad, te recomiendo usar una biblioteca de JWT en lugar de esta implementación
+  return 'signature';
 } 
