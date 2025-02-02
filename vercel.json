@@ -20,10 +20,5 @@
       "src": "/(.*)",
       "dest": "/dist/$1"
     }
-  ],
-  "env": {
-    "GOOGLE_CLIENT_EMAIL": "@google-client-email",
-    "GOOGLE_PRIVATE_KEY": "@google-private-key",
-    "SPREADSHEET_ID": "@spreadsheet-id"
-  }
+  ]
 } 
