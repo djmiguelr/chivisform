@@ -1,15 +1,21 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { google } from 'googleapis';
 
-const auth = new google.auth.GoogleAuth({
-  credentials: {
-    client_email: process.env.GOOGLE_CLIENT_EMAIL || '',
-    private_key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-  },
-  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-});
+export const config = {
+  runtime: 'edge',
+  unstable_allowDynamic: [
+    '/node_modules/googleapis/**',
+  ],
+};
 
-const sheets = google.sheets({ version: 'v4', auth });
+interface VercelRequest {
+  method: string;
+  body: any;
+}
+
+interface VercelResponse {
+  status: number;
+  json: (data: any) => Response;
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Credentials': 'true',
@@ -19,26 +25,27 @@ const corsHeaders = {
 };
 
 export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-): Promise<void> {
+  req: Request
+) {
   // Establecer headers CORS para todas las respuestas
-  Object.entries(corsHeaders).forEach(([key, value]) => {
-    res.setHeader(key, value);
-  });
-
-  // Manejar preflight OPTIONS request
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return new Response(null, {
+      status: 200,
+      headers: corsHeaders
+    });
   }
 
-  // Establecer Content-Type para respuestas JSON
-  res.setHeader('Content-Type', 'application/json');
-
   if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }), 
+      { 
+        status: 405,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
   }
 
   try {
@@ -52,17 +59,28 @@ export default async function handler(
       throw new Error('Falta SPREADSHEET_ID');
     }
 
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    const body = await req.json();
+
     const values = [
       new Date().toISOString(),
-      req.body.compraPreferencia || '',
-      req.body.ciudad || '',
-      req.body.edad || '',
-      req.body.ocupacion || '',
-      req.body.estilo || '',
-      req.body.experiencia || '',
-      req.body.recomendacion || '',
-      req.body.sugerencia || '',
-      req.body.aceptaTerminos ? 'Sí' : 'No'
+      body.compraPreferencia || '',
+      body.ciudad || '',
+      body.edad || '',
+      body.ocupacion || '',
+      body.estilo || '',
+      body.experiencia || '',
+      body.recomendacion || '',
+      body.sugerencia || '',
+      body.aceptaTerminos ? 'Sí' : 'No'
     ];
 
     const result = await sheets.spreadsheets.values.append({
@@ -74,16 +92,31 @@ export default async function handler(
       },
     });
 
-    res.status(200).json({ 
-      success: true, 
-      data: result.data 
-    });
+    return new Response(
+      JSON.stringify({ success: true, data: result.data }), 
+      { 
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
   } catch (error: any) {
     console.error('Error:', error);
     
-    res.status(500).json({ 
-      error: 'Error al guardar los datos', 
-      details: error.message
-    });
+    return new Response(
+      JSON.stringify({ 
+        error: 'Error al guardar los datos', 
+        details: error.message 
+      }), 
+      { 
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
   }
 } 
