@@ -14,10 +14,9 @@ export class GoogleSheetsService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Origin': 'https://app.chivisclothes.com'
+          'Accept': 'application/json'
         },
-        credentials: 'include',
+        mode: 'cors',
         body: JSON.stringify({
           ...data,
           timestamp: new Date().toISOString()
