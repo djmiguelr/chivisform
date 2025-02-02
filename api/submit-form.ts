@@ -35,6 +35,12 @@ export default async function handler(
   }
 
   try {
+    console.log('Credenciales:', {
+      client_email: process.env.GOOGLE_CLIENT_EMAIL,
+      spreadsheetId: process.env.SPREADSHEET_ID,
+      // No imprimas la private_key por seguridad
+    });
+
     console.log('Recibiendo datos:', req.body);
 
     const result = await sheets.spreadsheets.values.append({
@@ -57,16 +63,23 @@ export default async function handler(
       },
     });
 
-    console.log('Datos guardados exitosamente');
+    console.log('Respuesta de Google Sheets:', result.data);
     res.status(200).json({ 
       success: true, 
       data: result.data 
     });
   } catch (error: any) {
-    console.error('Error detallado:', error);
+    console.error('Error detallado:', {
+      message: error.message,
+      stack: error.stack,
+      response: error.response?.data,
+      config: error.config
+    });
+    
     res.status(500).json({ 
       error: 'Error al guardar los datos', 
-      details: error.message 
+      details: error.message,
+      googleError: error.response?.data
     });
   }
 } 
