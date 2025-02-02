@@ -1,9 +1,9 @@
 {
-  "name": "server",
+  "name": "chivis-api",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "NODE_ENV=production node index.js",
     "dev": "nodemon index.js"
   },
   "dependencies": {

@@ -2,7 +2,7 @@ import type { FormData } from '../types';
 
 export class GoogleSheetsService {
   private readonly API_URL = process.env.NODE_ENV === 'production'
-    ? 'https://chivisform.vercel.app/api/submit-form'
+    ? 'https://voltajedigital.com/chivis-api/submit-form'
     : '/api/submit-form';
 
   async appendData(data: FormData): Promise<{ success: boolean; data?: any }> {
