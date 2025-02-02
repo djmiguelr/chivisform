@@ -1,22 +1,9 @@
-interface FormData {
-  timestamp: string;
-  compraPreferencia: string;
-  ciudad: string;
-  ciudadOtra?: string;
-  edad: string;
-  ocupacion: string;
-  estilo: string;
-  estiloOtro?: string;
-  experiencia: string;
-  recomendacion: string;
-  sugerencia: string;
-  aceptaTerminos: boolean;
-}
+import type { FormData } from '../types';
 
 export class GoogleSheetsService {
-  private readonly API_URL = '/api/submit-form';  // Cambiamos a ruta relativa
+  private readonly API_URL = '/api/submit-form';
 
-  async appendData(data: FormData) {
+  async appendData(data: FormData): Promise<any> {
     try {
       const response = await fetch(this.API_URL, {
         method: 'POST',
